@@ -285,9 +285,9 @@ def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict
 
 
 def show_keyword_search():
-    platform_uid, platform_token = get_token()
     keyword = prompt('検索')
     if keyword:
+        platform_uid, platform_token = get_token()
         buf = keyword_search(platform_uid, platform_token, keyword)
         contents = buf["result"]["contents"]
         __add_itemV2(contents)
