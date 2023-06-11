@@ -6,19 +6,9 @@ import json
 import xbmcgui
 import xbmcplugin
 
-
 from urllib.parse import quote_plus
-from urllib.parse import parse_qs
 
 from resources.lib.common import urlread
-
-
-def update_query(query, values=None):
-    args = parse_qs(query, keep_blank_values=True)
-    for key in args.keys():
-        args[key] = args[key][0]
-    args.update(values or {})
-    return args
 
 
 def show_top():
@@ -192,7 +182,8 @@ def __add_itemV2(contents):
         contextmenu = []
         contextmenu += [("詳細", "Action(Info)")]  # 詳細情報
         listitem.addContextMenuItems(contextmenu, replaceItems=True)
-        url = "%s?action=%s&url=%s" % (sys.argv[0], "play", quote_plus(pg["url"]))
+        url = "%s?action=%s&url=%s" % (
+            sys.argv[0], "play", quote_plus(pg["url"]))
         items += [(url, listitem, False)]
     xbmcplugin.addDirectoryItems(int(sys.argv[1]), items, len(contents))
 
@@ -215,11 +206,13 @@ def __date(itemdate):
     m = re.match(r"([0-9]{1,2})月([0-9]{1,2})日", itemdate)
     if m:
         date1 = "%02d-%02d" % (int(m.group(1)), int(m.group(2)))
-        date = "%04d-%s" % (int(year0) - 1 if date1 > date0 else int(year0), date1)
+        date = "%04d-%s" % (int(year0) - 1 if date1 >
+                            date0 else int(year0), date1)
     m = re.match(r"([0-9]{1,2})/([0-9]{1,2})", itemdate)
     if m:
         date1 = "%02d-%02d" % (int(m.group(1)), int(m.group(2)))
-        date = "%04d-%s" % (int(year0) if date1 < date0 else int(year0) - 1, date1)
+        date = "%04d-%s" % (int(year0) if date1 <
+                            date0 else int(year0) - 1, date1)
     # 抽出結果
     return date
 

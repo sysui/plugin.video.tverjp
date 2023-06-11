@@ -1,15 +1,8 @@
-import xbmcaddon
-
 from urllib.request import build_opener
 from urllib.request import HTTPError
 
 
-class Const:
-    ADDON = xbmcaddon.Addon()
-    STR = ADDON.getLocalizedString
-
-
-def urlread(url, *headers):
+def urlread(url: str, *headers):
     opener = build_opener()
     h = [("User-Agent", "")]
     for header in headers:
