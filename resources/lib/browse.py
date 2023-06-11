@@ -1,46 +1,35 @@
-import sys
-import re
 import datetime
 import json
-
-import xbmc
-import xbmcgui
-import xbmcplugin
-
+import re
+import sys
 from urllib.parse import quote_plus
 from urllib.parse import urlencode
 from urllib.request import build_opener
 from urllib.request import HTTPError
 
+import xbmc
+import xbmcgui
+import xbmcplugin
+
 import requests
 
 
 def show_top():
-    __add_directory_item(name="総合ランキング", action="show_ranking_all")
-    __add_directory_item(name="ドラマランキング", action="show_ranking_drama")
-    __add_directory_item(name="バラエティランキング", action="show_ranking_variety")
-    __add_directory_item(name="すべて 新着", action="show_newer_all")
-    __add_directory_item(name="ドラマ 新着", action="show_newer_drama")
-    __add_directory_item(name="バラエティ 新着", action="show_newer_variety")
-    __add_directory_item(name="検索", action="show_keyword_search")
+    add_action(name="総合ランキング", action="show_ranking_all")
+    add_action(name="ドラマランキング", action="show_ranking_drama")
+    add_action(name="バラエティランキング", action="show_ranking_variety")
+    add_action(name="すべて 新着", action="show_newer_all")
+    add_action(name="ドラマ 新着", action="show_newer_drama")
+    add_action(name="バラエティ 新着", action="show_newer_variety")
+    add_action(name="検索", action="show_keyword_search")
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
-
-
-def call_ep():
-    serch_list = [("ドラマランキング", "show_ranking_drama"),
-                  ("バラエティランキング", "show_ranking_variety"),
-                  ("すべて 新着", "show_newer_all"),
-                  ("ドラマ 新着", "show_newer_drama"),
-                  ("バラエティ 新着", "show_newer_variety"),
-                  ("あちこち", "show_keyword_search"),
-                  ]
 
 
 def show_ranking_all():
     url = "https://service-api.tver.jp/api/v1/callEpisodeRankingDetail/all"
     buf = urlread(url, ("x-tver-platform-type", "web"))
     contents = json.loads(buf).get("result").get("contents").get("contents")
-    __add_itemV2(contents)
+    add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
@@ -48,7 +37,7 @@ def show_ranking_drama():
     url = "https://service-api.tver.jp/api/v1/callEpisodeRankingDetail/drama"
     buf = urlread(url, ("x-tver-platform-type", "web"))
     contents = json.loads(buf).get("result").get("contents").get("contents")
-    __add_itemV2(contents)
+    add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
@@ -56,7 +45,7 @@ def show_ranking_variety():
     url = "https://service-api.tver.jp/api/v1/callEpisodeRankingDetail/variety"
     buf = urlread(url, ("x-tver-platform-type", "web"))
     contents = json.loads(buf).get("result").get("contents").get("contents")
-    __add_itemV2(contents)
+    add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
@@ -64,7 +53,7 @@ def show_newer_all():
     url = "https://service-api.tver.jp/api/v1/callNewerDetail/all"
     buf = urlread(url, ("x-tver-platform-type", "web"))
     contents = json.loads(buf).get("result").get("contents").get("contents")
-    __add_itemV2(contents)
+    add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
@@ -72,7 +61,7 @@ def show_newer_drama():
     url = "https://service-api.tver.jp/api/v1/callNewerDetail/drama"
     buf = urlread(url, ("x-tver-platform-type", "web"))
     contents = json.loads(buf).get("result").get("contents").get("contents")
-    __add_itemV2(contents)
+    add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
@@ -80,7 +69,7 @@ def show_newer_variety():
     url = "https://service-api.tver.jp/api/v1/callNewerDetail/variety"
     buf = urlread(url, ("x-tver-platform-type", "web"))
     contents = json.loads(buf).get("result").get("contents").get("contents")
-    __add_itemV2(contents)
+    add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
@@ -133,14 +122,14 @@ def __url(url: str) -> str:
     return url
 
 
-def play(url):
+def play(url: str):
     url = __url(url)
     xbmcplugin.setResolvedUrl(
         int(sys.argv[1]), succeeded=True, listitem=xbmcgui.ListItem(path=url)
     )
 
 
-def __add_itemV2(contents):
+def add_contents(contents):
     items = []
     for data in contents:
         item = data.get("content")
@@ -203,7 +192,7 @@ def __add_itemV2(contents):
     xbmcplugin.addDirectoryItems(int(sys.argv[1]), items, len(contents))
 
 
-def __add_directory_item(name, action):
+def add_action(name, action):
     listitem = xbmcgui.ListItem(name)
     url = "%s?action=%s" % (sys.argv[0], action)
     xbmcplugin.addDirectoryItem(int(sys.argv[1]), url, listitem, True)
@@ -213,7 +202,6 @@ def __date(itemdate):
     now = datetime.datetime.now()
     year0 = now.strftime("%Y")
     date0 = now.strftime("%m-%d")
-    # 日時を抽出
     date = "0000-00-00"
     m = re.match(r"(20[0-9]{2})年", itemdate)
     if m:
@@ -228,7 +216,6 @@ def __date(itemdate):
         date1 = "%02d-%02d" % (int(m.group(1)), int(m.group(2)))
         date = "%04d-%s" % (int(year0) if date1 <
                             date0 else int(year0) - 1, date1)
-    # 抽出結果
     return date
 
 
@@ -250,7 +237,7 @@ def urlread(url: str, *headers):
         response = opener.open(url)
         buf = response.read()
         response.close()
-    except HTTPError as e:
+    except HTTPError:
         buf = ""
     return buf
 
@@ -279,25 +266,23 @@ def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict
     url = f"{endpont}?{params}"
     headers = {"User-Agent": "", "x-tver-platform-type": "web"}
     r = requests.get(url, headers=headers)
-    print(r.json())
-    print(type(r.json()))
     return r.json()
 
 
-def show_keyword_search():
-    keyword = prompt('検索')
+def show_keyword_search(keyword: str = ""):
+    keyword = keyword or prompt("検索")
     if keyword:
         platform_uid, platform_token = get_token()
         buf = keyword_search(platform_uid, platform_token, keyword)
         contents = buf["result"]["contents"]
-        __add_itemV2(contents)
+        add_contents(contents)
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
-def prompt(heading: str = "") -> str | None:
+def prompt(heading: str = "") -> str:
     kb = xbmc.Keyboard('', heading)
     kb.doModal()
     if (kb.isConfirmed()):
         name = kb.getText()
         return name
-    return None
+    return ""
