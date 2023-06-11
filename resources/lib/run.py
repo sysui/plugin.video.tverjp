@@ -2,15 +2,15 @@ import sys
 from urllib.parse import parse_qs
 
 from resources.lib.browse import (
+    play,
     show_keyword_search,
-    show_top,
-    show_ranking_all,
-    show_ranking_drama,
-    show_ranking_variety,
     show_newer_all,
     show_newer_drama,
     show_newer_variety,
-    play,
+    show_ranking_all,
+    show_ranking_drama,
+    show_ranking_variety,
+    show_top,
 )
 
 
@@ -44,6 +44,9 @@ def run():
 
     elif action == "show_keyword_search":
         show_keyword_search()
+
+    elif action == "search_with_keyword_params":
+        (keyword := args.get("keyword")) and show_keyword_search(keyword)
 
     elif action == "play":
         play(args["url"])
