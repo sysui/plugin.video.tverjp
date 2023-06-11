@@ -3,12 +3,16 @@ import re
 import datetime
 import json
 
+import xbmc
 import xbmcgui
 import xbmcplugin
 
 from urllib.parse import quote_plus
+from urllib.parse import urlencode
+from urllib.request import build_opener
+from urllib.request import HTTPError
 
-from resources.lib.common import urlread
+import requests
 
 
 def show_top():
@@ -18,7 +22,18 @@ def show_top():
     __add_directory_item(name="すべて 新着", action="show_newer_all")
     __add_directory_item(name="ドラマ 新着", action="show_newer_drama")
     __add_directory_item(name="バラエティ 新着", action="show_newer_variety")
+    __add_directory_item(name="検索", action="show_keyword_search")
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
+
+def call_ep():
+    serch_list = [("ドラマランキング", "show_ranking_drama"),
+                  ("バラエティランキング", "show_ranking_variety"),
+                  ("すべて 新着", "show_newer_all"),
+                  ("ドラマ 新着", "show_newer_drama"),
+                  ("バラエティ 新着", "show_newer_variety"),
+                  ("あちこち", "show_keyword_search"),
+                  ]
 
 
 def show_ranking_all():
@@ -69,7 +84,7 @@ def show_newer_variety():
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
-def __url(url):
+def __url(url: str) -> str:
     # episodeをダウンロード
     # https://statics.tver.jp/content/episode/epv3o3rrpl.json?v=18
     buf = urlread(url)
@@ -223,3 +238,66 @@ def __labeldate(date):
     if m:
         date = "%s.%s.%s" % (m.group(3), m.group(2), m.group(1))
     return date
+
+
+def urlread(url: str, *headers):
+    opener = build_opener()
+    h = [("User-Agent", "")]
+    for header in headers:
+        h.append(header)
+    opener.addheaders = h
+    try:
+        response = opener.open(url)
+        buf = response.read()
+        response.close()
+    except HTTPError as e:
+        buf = ""
+    return buf
+
+
+def get_token() -> tuple[str, str]:
+    URL_TOKEN_SERVICE = 'https://platform-api.tver.jp/v2/api/platform_users/browser/create'
+    headers = {
+        'user-agent': "",
+        'Content-Type': 'application/x-www-form-urlencoded',
+    }
+    r = requests.post(URL_TOKEN_SERVICE,
+                      data=b'device_type=pc', headers=headers)
+    data = r.json()
+    platform_uid = data['result']['platform_uid']
+    platform_token = data['result']['platform_token']
+    return (platform_uid, platform_token)
+
+
+def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict:
+    params = urlencode({
+        "platform_uid": platform_uid,
+        "platform_token": platform_token,
+        "keyword": keyword,
+    })
+    endpont = "https://platform-api.tver.jp/service/api/v1/callKeywordSearch"
+    url = f"{endpont}?{params}"
+    headers = {"User-Agent": "", "x-tver-platform-type": "web"}
+    r = requests.get(url, headers=headers)
+    print(r.json())
+    print(type(r.json()))
+    return r.json()
+
+
+def show_keyword_search():
+    platform_uid, platform_token = get_token()
+    keyword = prompt('検索')
+    if keyword:
+        buf = keyword_search(platform_uid, platform_token, keyword)
+        contents = buf["result"]["contents"]
+        __add_itemV2(contents)
+        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
+
+def prompt(heading: str = "") -> str | None:
+    kb = xbmc.Keyboard('', heading)
+    kb.doModal()
+    if (kb.isConfirmed()):
+        name = kb.getText()
+        return name
+    return None
