@@ -27,48 +27,48 @@ def show_top():
 
 def show_ranking_all():
     url = "https://service-api.tver.jp/api/v1/callEpisodeRankingDetail/all"
-    buf = urlread(url, ("x-tver-platform-type", "web"))
-    contents = json.loads(buf).get("result").get("contents").get("contents")
+    data = get(url, {"x-tver-platform-type": "web"})
+    contents = data["result"]["contents"]["contents"]
     add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
 def show_ranking_drama():
     url = "https://service-api.tver.jp/api/v1/callEpisodeRankingDetail/drama"
-    buf = urlread(url, ("x-tver-platform-type", "web"))
-    contents = json.loads(buf).get("result").get("contents").get("contents")
+    data = get(url, {"x-tver-platform-type": "web"})
+    contents = data["result"]["contents"]["contents"]
     add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
 def show_ranking_variety():
     url = "https://service-api.tver.jp/api/v1/callEpisodeRankingDetail/variety"
-    buf = urlread(url, ("x-tver-platform-type", "web"))
-    contents = json.loads(buf).get("result").get("contents").get("contents")
+    data = get(url, {"x-tver-platform-type": "web"})
+    contents = data["result"]["contents"]["contents"]
     add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
 def show_newer_all():
     url = "https://service-api.tver.jp/api/v1/callNewerDetail/all"
-    buf = urlread(url, ("x-tver-platform-type", "web"))
-    contents = json.loads(buf).get("result").get("contents").get("contents")
+    data = get(url, {"x-tver-platform-type": "web"})
+    contents = data["result"]["contents"]["contents"]
     add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
 def show_newer_drama():
     url = "https://service-api.tver.jp/api/v1/callNewerDetail/drama"
-    buf = urlread(url, ("x-tver-platform-type", "web"))
-    contents = json.loads(buf).get("result").get("contents").get("contents")
+    data = get(url, {"x-tver-platform-type": "web"})
+    contents = data["result"]["contents"]["contents"]
     add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
 def show_newer_variety():
     url = "https://service-api.tver.jp/api/v1/callNewerDetail/variety"
-    buf = urlread(url, ("x-tver-platform-type", "web"))
-    contents = json.loads(buf).get("result").get("contents").get("contents")
+    data = get(url, {"x-tver-platform-type": "web"})
+    contents = data["result"]["contents"]["contents"]
     add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
@@ -221,6 +221,14 @@ def urlread(url: str, *headers):
     return buf
 
 
+def get(url: str, *headers_arg: dict[str, str]):
+    headers: dict[str, str] = {"User-Agent": ""}
+    for header in headers_arg:
+        headers |= header
+    r = requests.get(url, headers=header)
+    return r.json()
+
+
 def get_search_result(url: str) -> dict:
     headers = {"User-Agent": "", "x-tver-platform-type": "web"}
     r = requests.get(url, headers=headers)
@@ -252,9 +260,7 @@ def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict
     )
     endpont = "https://platform-api.tver.jp/service/api/v1/callKeywordSearch"
     url = f"{endpont}?{params}"
-    headers = {"User-Agent": "", "x-tver-platform-type": "web"}
-    r = requests.get(url, headers=headers)
-    return r.json()
+    return get_search_result(url)
 
 
 def show_keyword_search(keyword: str = ""):
