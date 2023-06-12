@@ -73,60 +73,45 @@ def show_newer_variety():
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
-def __url(url: str) -> str:
-    # episodeをダウンロード
-    # https://statics.tver.jp/content/episode/epv3o3rrpl.json?v=18
+def __url(url: str):
     buf = urlread(url)
     episode = json.loads(buf)
-    # "video": {
-    #     "videoRefID": "37255_37254_38777",
-    #     "accountID": "4394098883001",
-    #     "playerID": "MfxS5MXtZ",
-    #     "channelID": "ex"
-    # },
-    # "video": {
-    #     "videoID": "6322519809112",
-    #     "accountID": "3971130137001",
-    #     "playerID": "Eyc2R2Jow",
-    #     "channelID": "tx"
-    # },
     video = episode.get("video")
     videoRefID = video.get("videoRefID")
     videoID = video.get("videoID")
     accountID = video.get("accountID")
     playerID = video.get("playerID")
-    # ポリシーキーを取得
-    # 　https://players.brightcove.net/4394098883001/MfxS5MXtZ_default/index.min.js
     url = f"https://players.brightcove.net/{accountID}/{playerID}_default/index.min.js"
     buf = urlread(url)
-    # {accountId:"4394098883001",policyKey:"BCpkADawqM2XqfdZX45o9xMUoyUbUrkEjt-dMFupSdYwCw6YH7Dgd_Aj4epNSPEGgyBOFGHmLa_IPqbf8qv8CWSZaI_8Cd8xkpoMSNkyZrzzX7_TGRmVjAmZ_q_KxemVvC2gsMyfCqCzRrRx"}
     policykey = re.search(
         r'options:\{accountId:"(.*?)",policyKey:"(.*?)"\}', buf.decode()
     ).group(2)
-    # playbackをダウンロード
     if videoRefID:
-        # https://edge.api.brightcove.com/playback/v1/accounts/4394098883001/videos/ref%3A18_1390_39076
         url = f"https://edge.api.brightcove.com/playback/v1/accounts/{accountID}/videos/ref%3A{videoRefID}"
     elif videoID:
-        # https://edge.api.brightcove.com/playback/v1/accounts/3971130137001/videos/6322259035112?config_id=f0876aa7-0bab-4049-ab23-1b2001ff7c79
         url = f"https://edge.api.brightcove.com/playback/v1/accounts/{accountID}/videos/{videoID}"
     buf = urlread(url, ("accept", f"application/json;pk={policykey}"))
     playback = json.loads(buf)
     sources = playback.get("sources")
+    text_tracks = playback["text_tracks"][0]["sources"]
+    if text_tracks:
+        vtt_url = text_tracks[0]["src"]
+    else:
+        vtt_url = ""
     filtered = filter(
         lambda source: source.get("ext_x_version")
         and source.get("src").startswith("https://"),
         sources,
     )
-    url = list(filtered)[-1].get("src")
-    return url
+    video_url: str = list(filtered)[-1].get("src")
+    return video_url, vtt_url
 
 
 def play(url: str):
-    url = __url(url)
-    xbmcplugin.setResolvedUrl(
-        int(sys.argv[1]), succeeded=True, listitem=xbmcgui.ListItem(path=url)
-    )
+    video_url, vtt_url = __url(url)
+    listitem = xbmcgui.ListItem(path=video_url)
+    listitem.setSubtitles(["special://temp/example.srt", vtt_url])
+    xbmcplugin.setResolvedUrl(int(sys.argv[1]), succeeded=True, listitem=listitem)
 
 
 def add_contents(contents):
@@ -183,11 +168,7 @@ def add_contents(contents):
         )
         listitem.setInfo(type="video", infoLabels=labels)
         listitem.setProperty("IsPlayable", "true")
-        contextmenu = []
-        contextmenu += [("詳細", "Action(Info)")]  # 詳細情報
-        listitem.addContextMenuItems(contextmenu, replaceItems=True)
-        url = "%s?action=%s&url=%s" % (
-            sys.argv[0], "play", quote_plus(pg["url"]))
+        url = "%s?action=%s&url=%s" % (sys.argv[0], "play", quote_plus(pg["url"]))
         items += [(url, listitem, False)]
     xbmcplugin.addDirectoryItems(int(sys.argv[1]), items, len(contents))
 
@@ -209,18 +190,15 @@ def __date(itemdate):
     m = re.match(r"([0-9]{1,2})月([0-9]{1,2})日", itemdate)
     if m:
         date1 = "%02d-%02d" % (int(m.group(1)), int(m.group(2)))
-        date = "%04d-%s" % (int(year0) - 1 if date1 >
-                            date0 else int(year0), date1)
+        date = "%04d-%s" % (int(year0) - 1 if date1 > date0 else int(year0), date1)
     m = re.match(r"([0-9]{1,2})/([0-9]{1,2})", itemdate)
     if m:
         date1 = "%02d-%02d" % (int(m.group(1)), int(m.group(2)))
-        date = "%04d-%s" % (int(year0) if date1 <
-                            date0 else int(year0) - 1, date1)
+        date = "%04d-%s" % (int(year0) if date1 < date0 else int(year0) - 1, date1)
     return date
 
 
 def __labeldate(date):
-    # listitem.date用に変換
     m = re.search("^([0-9]{4})-([0-9]{2})-([0-9]{2})", date)
     if m:
         date = "%s.%s.%s" % (m.group(3), m.group(2), m.group(1))
@@ -242,26 +220,37 @@ def urlread(url: str, *headers):
     return buf
 
 
-def get_token() -> tuple[str, str]:
-    URL_TOKEN_SERVICE = 'https://platform-api.tver.jp/v2/api/platform_users/browser/create'
-    headers = {
-        'user-agent': "",
-        'Content-Type': 'application/x-www-form-urlencoded',
-    }
-    r = requests.post(URL_TOKEN_SERVICE,
-                      data=b'device_type=pc', headers=headers)
+def req(url: str, *headers_arg: dict[str, str]):
+    headers: dict[str, str] = {"User-Agent": ""}
+    for header in headers_arg:
+        headers |= header
+    r = requests.get(url, headers=header)
     data = r.json()
-    platform_uid = data['result']['platform_uid']
-    platform_token = data['result']['platform_token']
+
+
+def get_token() -> tuple[str, str]:
+    URL_TOKEN_SERVICE = (
+        "https://platform-api.tver.jp/v2/api/platform_users/browser/create"
+    )
+    headers = {
+        "user-agent": "",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+    r = requests.post(URL_TOKEN_SERVICE, data=b"device_type=pc", headers=headers)
+    data = r.json()
+    platform_uid = data["result"]["platform_uid"]
+    platform_token = data["result"]["platform_token"]
     return (platform_uid, platform_token)
 
 
 def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict:
-    params = urlencode({
-        "platform_uid": platform_uid,
-        "platform_token": platform_token,
-        "keyword": keyword,
-    })
+    params = urlencode(
+        {
+            "platform_uid": platform_uid,
+            "platform_token": platform_token,
+            "keyword": keyword,
+        }
+    )
     endpont = "https://platform-api.tver.jp/service/api/v1/callKeywordSearch"
     url = f"{endpont}?{params}"
     headers = {"User-Agent": "", "x-tver-platform-type": "web"}
@@ -280,9 +269,9 @@ def show_keyword_search(keyword: str = ""):
 
 
 def prompt(heading: str = "") -> str:
-    kb = xbmc.Keyboard('', heading)
+    kb = xbmc.Keyboard("", heading)
     kb.doModal()
-    if (kb.isConfirmed()):
+    if kb.isConfirmed():
         name = kb.getText()
         return name
     return ""
