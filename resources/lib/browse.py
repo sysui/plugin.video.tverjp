@@ -73,7 +73,7 @@ def show_newer_variety():
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
-def __url(url: str):
+def __url(url: str) -> tuple[str, str]:
     buf = urlread(url)
     episode = json.loads(buf)
     video = episode.get("video")
@@ -95,7 +95,7 @@ def __url(url: str):
     sources = playback.get("sources")
     text_tracks = playback["text_tracks"][0]["sources"]
     if text_tracks:
-        vtt_url = text_tracks[0]["src"]
+        vtt_url: str = text_tracks[0]["src"]
     else:
         vtt_url = ""
     filtered = filter(
@@ -110,7 +110,8 @@ def __url(url: str):
 def play(url: str):
     video_url, vtt_url = __url(url)
     listitem = xbmcgui.ListItem(path=video_url)
-    listitem.setSubtitles(["special://temp/example.srt", vtt_url])
+    if vtt_url:
+        listitem.setSubtitles([vtt_url])
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), succeeded=True, listitem=listitem)
 
 
@@ -220,12 +221,10 @@ def urlread(url: str, *headers):
     return buf
 
 
-def req(url: str, *headers_arg: dict[str, str]):
-    headers: dict[str, str] = {"User-Agent": ""}
-    for header in headers_arg:
-        headers |= header
-    r = requests.get(url, headers=header)
-    data = r.json()
+def get_search_result(url: str) -> dict:
+    headers = {"User-Agent": "", "x-tver-platform-type": "web"}
+    r = requests.get(url, headers=headers)
+    return r.json()
 
 
 def get_token() -> tuple[str, str]:
