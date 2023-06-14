@@ -148,8 +148,8 @@ def add_contents(contents):
             title.append(date)
         if item.get("seriesTitle"):
             title.append(item.get("seriesTitle"))
-        elif item.get("title"):
-            title.append(item.get("title"))
+        if item.get("title"):
+            title.append("    " + item.get("title"))
         title = " ".join(title)
         description = []
         if item.get("title"):
@@ -161,39 +161,27 @@ def add_contents(contents):
         thumbnail = (
             f"https://statics.tver.jp/images/content/thumbnail/episode/small/{id}.jpg"
         )
-        url = f"https://statics.tver.jp/content/episode/{id}.json"
-        pg = {
-            "title": title,
-            "url": url,
-            "date": __date(date),
-            "description": description,
-            "source": broadcasterName,
-            "category": "",
-            "duration": "",
-            "thumbnail": thumbnail,
-            "thumbfile": thumbnail,
-            "contentid": id,
-        }
+        episode_url = f"https://statics.tver.jp/content/episode/{id}.json"
         labels = {
-            "title": pg["title"],
-            "plot": pg["description"],
-            "plotoutline": pg["description"],
-            "studio": pg["source"],
-            "date": __labeldate(pg["date"]),
+            "title": title,
+            "plot": description,
+            "plotoutline": description,
+            "studio": broadcasterName,
+            "date": __labeldate(__date(date)),
         }
-        listitem = xbmcgui.ListItem(pg["title"])
+        listitem = xbmcgui.ListItem(title)
         listitem.setArt(
             {
-                "icon": pg["thumbnail"],
-                "thumb": pg["thumbnail"],
-                "poster": pg["thumbnail"],
+                "icon": thumbnail,
+                "thumb": thumbnail,
+                "poster": thumbnail,
             }
         )
         listitem.setInfo(type="video", infoLabels=labels)
         listitem.setProperty("IsPlayable", "true")
-        url = "%s?action=%s&url=%s" % (sys.argv[0], "play", quote_plus(pg["url"]))
+        url = "%s?action=%s&url=%s" % (sys.argv[0], "play", quote_plus(episode_url))
         items += [(url, listitem, False)]
-    xbmcplugin.addDirectoryItems(int(sys.argv[1]), items, len(contents))
+    xbmcplugin.addDirectoryItems(int(sys.argv[1]), items)
 
 
 def add_action(name, action):
