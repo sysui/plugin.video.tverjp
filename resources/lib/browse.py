@@ -2,6 +2,7 @@ import datetime
 import json
 import re
 import sys
+from typing import NamedTuple
 from urllib.parse import quote_plus
 from urllib.parse import urlencode
 from urllib.request import build_opener
@@ -113,6 +114,27 @@ def play(url: str):
     if vtt_url:
         listitem.setSubtitles([vtt_url])
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), succeeded=True, listitem=listitem)
+
+
+class ContentInfo(NamedTuple):
+    id: str
+    version: int
+    title: str
+    seriesID: str
+    endAt: int
+    broadcastDateLabel: str
+    isNHKContent: bool
+    isSubtitle: bool
+    ribbonID: int
+    seriesTitle: str
+    isAvailable: bool
+    broadcasterName: str
+    productionProviderName: str
+
+
+class Content(NamedTuple):
+    type: str
+    content: ContentInfo
 
 
 def add_contents(contents):
