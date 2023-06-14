@@ -151,12 +151,19 @@ def add_contents(contents):
         if item.get("title"):
             title.append("    " + item.get("title"))
         title = " ".join(title)
-        description = []
-        if item.get("title"):
-            description.append(item.get("title"))
-        if item.get("broadcastDateLabel"):
-            description.append(item.get("broadcastDateLabel"))
-        description = "\n".join(description)
+        description = "\n".join(
+            [
+                item["seriesTitle"],
+                item["title"],
+                item["broadcastDateLabel"],
+                "配信終了: "
+                + datetime.datetime.fromtimestamp(item["endAt"]).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+                "字幕: " + str(item["isSubtitle"]),
+                item["broadcasterName"],
+            ]
+        )
         broadcasterName = item.get("broadcasterName")
         thumbnail = (
             f"https://statics.tver.jp/images/content/thumbnail/episode/small/{id}.jpg"
