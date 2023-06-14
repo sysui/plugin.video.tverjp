@@ -162,7 +162,7 @@ def add_contents(contents):
             f"https://statics.tver.jp/images/content/thumbnail/episode/small/{id}.jpg"
         )
         url = f"https://statics.tver.jp/content/episode/{id}.json"
-        pg = item["_summary"] = {
+        pg = {
             "title": title,
             "url": url,
             "date": __date(date),
