@@ -5,8 +5,6 @@ import sys
 from typing import TypedDict
 from urllib.parse import quote_plus
 from urllib.parse import urlencode
-from urllib.request import build_opener
-from urllib.request import HTTPError
 
 import xbmc
 import xbmcgui
@@ -67,8 +65,8 @@ def dashboard(url: str):
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
-def __url(url: str) -> tuple[str, str]:
-    buf = urlread(url)
+def get_video(url: str) -> tuple[str, list[str]]:
+    buf = requests.get(url, headers={"User-Agent": ""}).content
     episode = json.loads(buf)
     video = episode["video"]
     videoRefID = video.get("videoRefID")
@@ -76,7 +74,7 @@ def __url(url: str) -> tuple[str, str]:
     accountID = video["accountID"]
     playerID = video["playerID"]
     url = f"https://players.brightcove.net/{accountID}/{playerID}_default/index.min.js"
-    buf = urlread(url)
+    buf = requests.get(url, headers={"User-Agent": ""}).content
     policykey = re.search(
         r'options:\{accountId:"(.*?)",policyKey:"(.*?)"\}', buf.decode()
     ).group(2)
@@ -85,26 +83,28 @@ def __url(url: str) -> tuple[str, str]:
     elif videoID:
         url = f"https://edge.api.brightcove.com/playback/v1/accounts/{accountID}/videos/{videoID}"
     playback = get(url, {"accept": f"application/json;pk={policykey}"})
-    sources = playback.get("sources")
-    text_tracks = playback["text_tracks"][0]["sources"]
-    if text_tracks:
-        vtt_url: str = text_tracks[0]["src"]
-    else:
-        vtt_url = ""
+    subtitle_uri_list = []
+    if text_tracks := playback["text_tracks"][0]["sources"]:
+        subtitle_uri_list = list(
+            map(
+                lambda text_track: text_track["src"],
+                text_tracks,
+            )
+        )
     filtered = filter(
         lambda source: source.get("ext_x_version")
         and source.get("src").startswith("https://"),
-        sources,
+        playback.get("sources"),
     )
     video_url: str = list(filtered)[-1].get("src")
-    return video_url, vtt_url
+    return video_url, subtitle_uri_list
 
 
 def play(url: str):
-    video_url, vtt_url = __url(url)
+    video_url, subtitle_uri_list = get_video(url)
     listitem = xbmcgui.ListItem(path=video_url)
-    if vtt_url:
-        listitem.setSubtitles([vtt_url])
+    if subtitle_uri_list:
+        listitem.setSubtitles(subtitle_uri_list)
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), succeeded=True, listitem=listitem)
 
 
@@ -172,21 +172,6 @@ def add_contents(contents: list[Content]):
     xbmcplugin.addDirectoryItems(int(sys.argv[1]), items)
 
 
-def urlread(url: str, *headers):
-    opener = build_opener()
-    h = [("User-Agent", "")]
-    for header in headers:
-        h.append(header)
-    opener.addheaders = h
-    try:
-        response = opener.open(url)
-        buf = response.read()
-        response.close()
-    except HTTPError:
-        buf = ""
-    return buf
-
-
 def get(url: str, *headers_arg: dict[str, str]):
     headers: dict[str, str] = {"User-Agent": ""}
     for header in headers_arg:
@@ -207,7 +192,7 @@ def get_token() -> tuple[str, str]:
     data = r.json()
     platform_uid = data["result"]["platform_uid"]
     platform_token = data["result"]["platform_token"]
-    return (platform_uid, platform_token)
+    return platform_uid, platform_token
 
 
 def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict:
