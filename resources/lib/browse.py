@@ -68,7 +68,8 @@ def dashboard(url: str):
 
 
 def __url(url: str) -> tuple[str, str]:
-    episode = get(url)
+    buf = urlread(url)
+    episode = json.loads(buf)
     video = episode["video"]
     videoRefID = video.get("videoRefID")
     videoID = video.get("videoID")
@@ -83,8 +84,7 @@ def __url(url: str) -> tuple[str, str]:
         url = f"https://edge.api.brightcove.com/playback/v1/accounts/{accountID}/videos/ref%3A{videoRefID}"
     elif videoID:
         url = f"https://edge.api.brightcove.com/playback/v1/accounts/{accountID}/videos/{videoID}"
-    buf = urlread(url, ("accept", f"application/json;pk={policykey}"))
-    playback = json.loads(buf)
+    playback = get(url, {"accept": f"application/json;pk={policykey}"})
     sources = playback.get("sources")
     text_tracks = playback["text_tracks"][0]["sources"]
     if text_tracks:
@@ -195,12 +195,6 @@ def get(url: str, *headers_arg: dict[str, str]):
     return r.json()
 
 
-def get_search_result(url: str) -> dict:
-    headers = {"User-Agent": "", "x-tver-platform-type": "web"}
-    r = requests.get(url, headers=headers)
-    return r.json()
-
-
 def get_token() -> tuple[str, str]:
     URL_TOKEN_SERVICE = (
         "https://platform-api.tver.jp/v2/api/platform_users/browser/create"
@@ -217,6 +211,7 @@ def get_token() -> tuple[str, str]:
 
 
 def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict:
+    endpoint = "https://platform-api.tver.jp/service/api/v2/callKeywordSearch"
     params = urlencode(
         {
             "platform_uid": platform_uid,
@@ -224,19 +219,19 @@ def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict
             "keyword": keyword,
         }
     )
-    endpoint = "https://platform-api.tver.jp/service/api/v2/callKeywordSearch"
     url = f"{endpoint}?{params}"
-    return get_search_result(url)
+    return get(url, {"x-tver-platform-type": "web"})
 
 
 def show_keyword_search(keyword: str = ""):
     keyword = keyword or prompt("検索")
     if keyword:
         platform_uid, platform_token = get_token()
-        buf = keyword_search(platform_uid, platform_token, keyword)
-        contents = buf["result"]["contents"]
-        add_contents(contents)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+        data = keyword_search(platform_uid, platform_token, keyword)
+        contents = data["result"]["contents"]
+        if contents:
+            add_contents(contents)
+            xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 
 def prompt(heading: str = "") -> str:
