@@ -224,8 +224,8 @@ def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict
             "keyword": keyword,
         }
     )
-    endpont = "https://platform-api.tver.jp/service/api/v1/callKeywordSearch"
-    url = f"{endpont}?{params}"
+    endpoint = "https://platform-api.tver.jp/service/api/v2/callKeywordSearch"
+    url = f"{endpoint}?{params}"
     return get_search_result(url)
 
 
