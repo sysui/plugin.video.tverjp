@@ -59,7 +59,7 @@ def add_dashboard():
 
 
 def dashboard(url: str):
-    data = get(url, {"x-tver-platform-type": "web"})
+    data = get_json(url, {"x-tver-platform-type": "web"})
     contents = data["result"]["contents"]["contents"]
     add_contents(contents)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
@@ -82,7 +82,7 @@ def get_video(url: str) -> tuple[str, list[str]]:
         url = f"https://edge.api.brightcove.com/playback/v1/accounts/{accountID}/videos/ref%3A{videoRefID}"
     elif videoID:
         url = f"https://edge.api.brightcove.com/playback/v1/accounts/{accountID}/videos/{videoID}"
-    playback = get(url, {"accept": f"application/json;pk={policykey}"})
+    playback = get_json(url, {"accept": f"application/json;pk={policykey}"})
     subtitle_uri_list = []
     if text_tracks := playback["text_tracks"][0]["sources"]:
         subtitle_uri_list = list(
@@ -172,7 +172,7 @@ def add_contents(contents: list[Content]):
     xbmcplugin.addDirectoryItems(int(sys.argv[1]), items)
 
 
-def get(url: str, *headers_arg: dict[str, str]):
+def get_json(url: str, *headers_arg: dict[str, str]):
     headers: dict[str, str] = {"User-Agent": ""}
     for header in headers_arg:
         headers |= header
@@ -205,7 +205,7 @@ def keyword_search(platform_uid: str, platform_token: str, keyword: str) -> dict
         }
     )
     url = f"{endpoint}?{params}"
-    return get(url, {"x-tver-platform-type": "web"})
+    return get_json(url, {"x-tver-platform-type": "web"})
 
 
 def show_keyword_search(keyword: str = ""):
