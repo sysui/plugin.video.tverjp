@@ -4,6 +4,7 @@ from urllib.parse import parse_qs
 from resources.lib.browse import (
     dashboard,
     play,
+    show_keyword_history,
     show_keyword_search,
     show_top,
 )
@@ -21,6 +22,9 @@ def run():
 
     elif action == "dashboard":
         (dashboard_url := args.get("dashboard_url")) and dashboard(dashboard_url)
+
+    elif action == "show_keyword_history":
+        show_keyword_history()
 
     elif action == "show_keyword_search":
         show_keyword_search()
