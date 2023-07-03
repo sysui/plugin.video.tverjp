@@ -135,7 +135,8 @@ def _add_contents(contents: list[Content]):
     for data in contents:
         item = data["content"]
         id = item["id"]
-        title = f'{item["broadcastDateLabel"]} {item["seriesTitle"]}  {item["title"]}'
+        broadcastDateLabel = item["broadcastDateLabel"].replace("放送分", "")
+        title = f'{broadcastDateLabel} {item["seriesTitle"]}  {item["title"]}'
         # Year 2038 problem
         if item["endAt"] < 2147483647:
             endAtStr = datetime.fromtimestamp(item["endAt"]).strftime(
