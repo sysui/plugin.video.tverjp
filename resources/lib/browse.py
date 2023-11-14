@@ -153,33 +153,30 @@ def _add_contents(contents: list[Content]):
         if data["type"] == "episode":
             item = data["content"]
             id = item["id"]
-            broadcastDateLabel = (
-                item["broadcastDateLabel"].replace("放送分", "")
-                if item.get("broadcastDateLabel")
-                else ""
+            broadcastDateLabelForTitle = re.sub(
+                r"(^\d{1,2})月(\d{1,2})日(.+)",
+                r"\1/\2\3",
+                item["broadcastDateLabel"].replace("放送分", ""),
             )
-            isSubtitle = item["isSubtitle"] if item.get("isSubtitle") else False
-            broadcasterName = (
-                item["broadcasterName"] if item.get("broadcasterName") else ""
+            title = (
+                f'{broadcastDateLabelForTitle} {item["seriesTitle"]}  {item["title"]}'
             )
-            title = f'{broadcastDateLabel} {item["seriesTitle"]}  {item["title"]}'
             # Year 2038 problem
-            if item["endAt"] < 2147483647:
-                endAtStr = datetime.fromtimestamp(item["endAt"]).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-            else:
-                endAtStr = "なし"
+            endAtStr = (
+                datetime.fromtimestamp(item["endAt"]).strftime("%Y-%m-%d %H:%M:%S")
+                if item["endAt"] < 2147483647
+                else "期限なし"
+            )
 
             description = "\n".join(
                 [
                     item["seriesTitle"],
                     item["title"],
                     "",
-                    broadcastDateLabel,
+                    item["broadcastDateLabel"],
                     "配信終了: " + endAtStr,
-                    "字幕: " + str(isSubtitle),
-                    broadcasterName,
+                    "字幕: " + str(item["isSubtitle"]),
+                    item["broadcasterName"],
                 ]
             )
             thumbnail = f"https://statics.tver.jp/images/content/thumbnail/episode/small/{id}.jpg"
@@ -195,7 +192,7 @@ def _add_contents(contents: list[Content]):
                 "title": title,
                 "plot": description,
                 "plotoutline": description,
-                "studio": broadcastDateLabel,
+                "studio": item["broadcastDateLabel"],
             }
             listitem.setInfo(type="video", infoLabels=labels)
             listitem.setProperty("IsPlayable", "true")
