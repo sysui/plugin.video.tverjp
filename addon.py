@@ -1,3 +1,3 @@
-from resources.lib.run import run
+from resources.lib.router import router
 
-run()
+router()
