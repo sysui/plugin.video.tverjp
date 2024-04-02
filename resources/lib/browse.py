@@ -109,7 +109,7 @@ def play(url: str):
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), succeeded=True, listitem=listitem)
 
 
-class ContentInfo(TypedDict):
+class EpisodeContent(TypedDict):
     id: str
     version: int
     title: str
@@ -125,58 +125,80 @@ class ContentInfo(TypedDict):
     productionProviderName: str
 
 
+class LiveContent(TypedDict):
+    id: str
+    version: int
+    title: str
+    startAt: int
+    endAt: int
+    liveType: int
+    dvr: dict
+    isNHKContent: bool
+    onairStartAt: int
+    onairEndAt: int
+    allowPlatforms: list[str]
+    episodeCc: int
+    seriesTitle: str
+    isDVRNow: bool
+
+
 class Content(TypedDict):
     type: str
-    content: ContentInfo
+    content: EpisodeContent
 
 
 def _add_contents(contents: list[Content]):
     items = []
     for data in contents:
-        item = data["content"]
-        id = item["id"]
-        broadcastDateLabel = item["broadcastDateLabel"].replace("放送分", "")
-        title = f'{broadcastDateLabel} {item["seriesTitle"]}  {item["title"]}'
-        # Year 2038 problem
-        if item["endAt"] < 2147483647:
-            endAtStr = datetime.fromtimestamp(item["endAt"]).strftime(
-                "%Y-%m-%d %H:%M:%S"
+        if data["type"] == "episode":
+            item = data["content"]
+            id = item["id"]
+            broadcastDateLabelForTitle = re.sub(
+                r"(^\d{1,2})月(\d{1,2})日(.+)",
+                r"\1/\2\3",
+                item["broadcastDateLabel"].replace("放送分", ""),
             )
-        else:
-            endAtStr = "なし"
-        description = "\n".join(
-            [
-                item["seriesTitle"],
-                item["title"],
-                "",
-                item["broadcastDateLabel"],
-                "配信終了: " + endAtStr,
-                "字幕: " + str(item["isSubtitle"]),
-                item["broadcasterName"],
-            ]
-        )
-        thumbnail = (
-            f"https://statics.tver.jp/images/content/thumbnail/episode/small/{id}.jpg"
-        )
-        listitem = xbmcgui.ListItem(title)
-        listitem.setArt(
-            {
-                "icon": thumbnail,
-                "thumb": thumbnail,
-                "poster": thumbnail,
+            title = (
+                f'{broadcastDateLabelForTitle} {item["seriesTitle"]}  {item["title"]}'
+            )
+            # Year 2038 problem
+            endAtStr = (
+                datetime.fromtimestamp(item["endAt"]).strftime("%Y-%m-%d %H:%M:%S")
+                if item["endAt"] < 2147483647
+                else "期限なし"
+            )
+
+            description = "\n".join(
+                [
+                    item["seriesTitle"],
+                    item["title"],
+                    "",
+                    item["broadcastDateLabel"],
+                    "配信終了: " + endAtStr,
+                    "字幕: " + str(item["isSubtitle"]),
+                    item["broadcasterName"],
+                ]
+            )
+            thumbnail = f"https://statics.tver.jp/images/content/thumbnail/episode/small/{id}.jpg"
+            listitem = xbmcgui.ListItem(title)
+            listitem.setArt(
+                {
+                    "icon": thumbnail,
+                    "thumb": thumbnail,
+                    "poster": thumbnail,
+                }
+            )
+            labels = {
+                "title": title,
+                "plot": description,
+                "plotoutline": description,
+                "studio": item["broadcastDateLabel"],
             }
-        )
-        labels = {
-            "title": title,
-            "plot": description,
-            "plotoutline": description,
-            "studio": item["broadcastDateLabel"],
-        }
-        listitem.setInfo(type="video", infoLabels=labels)
-        listitem.setProperty("IsPlayable", "true")
-        episode_url = f"https://statics.tver.jp/content/episode/{id}.json"
-        url = "%s?action=%s&url=%s" % (sys.argv[0], "play", quote_plus(episode_url))
-        items += [(url, listitem, False)]
+            listitem.setInfo(type="video", infoLabels=labels)
+            listitem.setProperty("IsPlayable", "true")
+            episode_url = f"https://statics.tver.jp/content/episode/{id}.json"
+            url = "%s?action=%s&url=%s" % (sys.argv[0], "play", quote_plus(episode_url))
+            items += [(url, listitem, False)]
     xbmcplugin.addDirectoryItems(int(sys.argv[1]), items)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
