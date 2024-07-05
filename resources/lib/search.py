@@ -28,13 +28,14 @@ def _keyword_search(platform_uid: str, platform_token: str, keyword: str):
 
 def show_keyword_search(keyword: str = ""):
     keyword = keyword or prompt("検索")
-    if keyword:
-        append_keyword_history(keyword)
-        platform_uid, platform_token = get_token()
-        data = _keyword_search(platform_uid, platform_token, keyword)
-        contents = data["result"]["contents"]
-        if contents:
-            add_contents(contents)
+    if not keyword:
+        return
+    append_keyword_history(keyword)
+    platform_uid, platform_token = get_token()
+    data = _keyword_search(platform_uid, platform_token, keyword)
+    contents = data["result"]["contents"]
+    if contents:
+        add_contents(contents)
 
 
 def show_keyword_history():
@@ -72,12 +73,12 @@ def show_keyword_history():
         remove_keyword_url = "{}?action={}&keyword={}".format(
             sys.argv[0], "remove_keyword", keyword
         )
-        command_remove = "RunPlugin({})".format(remove_keyword_url)
+        command_remove = f"Container.Update({remove_keyword_url})"
         remove_all_keyword_url = "{}?action={}".format(
             sys.argv[0],
             "remove_all_keyword",
         )
-        command_remove_all = "RunPlugin({})".format(remove_all_keyword_url)
+        command_remove_all = f"Container.Update({remove_all_keyword_url})"
         listitem.addContextMenuItems(
             [
                 ("この検索ワードを削除", command_remove),
