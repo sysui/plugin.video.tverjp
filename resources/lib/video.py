@@ -18,9 +18,10 @@ def _get_video(url: str) -> tuple[str, list[str]]:
     playerID = video["playerID"]
     url = f"https://players.brightcove.net/{accountID}/{playerID}_default/index.min.js"
     buf = requests.get(url, headers={"User-Agent": ""}).content
-    policykey = re.search(
-        r'options:\{accountId:"(.*?)",policyKey:"(.*?)"\}', buf.decode()
-    ).group(2)
+    match = re.search(r'options:\{accountId:"(.*?)",policyKey:"(.*?)"\}', buf.decode())
+    if match is None:
+        raise Exception
+    policykey = match.group(2)
     if videoRefID:
         url = f"https://edge.api.brightcove.com/playback/v1/accounts/{accountID}/videos/ref%3A{videoRefID}"
     elif videoID:
@@ -28,18 +29,13 @@ def _get_video(url: str) -> tuple[str, list[str]]:
     playback = get_json(url, {"accept": f"application/json;pk={policykey}"})
     subtitle_uri_list = []
     if text_tracks := playback["text_tracks"][0]["sources"]:
-        subtitle_uri_list = list(
-            map(
-                lambda text_track: text_track["src"],
-                text_tracks,
-            )
-        )
-    filtered = filter(
-        lambda source: source.get("ext_x_version")
-        and source.get("src").startswith("https://"),
-        playback.get("sources"),
-    )
-    video_url: str = list(filtered)[-1].get("src")
+        subtitle_uri_list = [text_track["src"] for text_track in text_tracks]
+    filtered_video_url_list = [
+        source
+        for source in playback.get("sources", [])
+        if source.get("ext_x_version") and source.get("src").startswith("https://")
+    ]
+    video_url = list(filtered_video_url_list)[-1].get("src")
     return video_url, subtitle_uri_list
 
 
