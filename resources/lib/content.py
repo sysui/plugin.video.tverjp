@@ -95,6 +95,11 @@ def add_contents(contents: list[Content]):
             }
             listitem.setInfo(type="video", infoLabels=labels)
             listitem.setProperty("IsPlayable", "true")
+            search_serise_title = "{}?action={}&keyword={}".format(
+                sys.argv[0], "search_with_keyword_params", item["seriesTitle"]
+            )
+            command_search = f"Container.Update({search_serise_title})"
+            listitem.addContextMenuItems([("この番組名で検索", command_search)])
             episode_url = f"https://statics.tver.jp/content/episode/{id}.json"
             url = "%s?action=%s&url=%s" % (sys.argv[0], "play", quote_plus(episode_url))
             items.append((url, listitem, False))
