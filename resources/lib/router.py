@@ -10,13 +10,13 @@ from resources.lib.video import play
 
 def router():
     args = parse_qs(sys.argv[2][1:])
-    action = args.get("action", [None])[0]
+    action = args.get("action", [None])[-1]
 
     if action is None:
         show_top()
 
     elif action == "dashboard":
-        dashboard_url = args.get("dashboard_url", [None])[0]
+        dashboard_url = args.get("dashboard_url", [None])[-1]
         if dashboard_url is not None:
             dashboard(dashboard_url)
 
@@ -27,7 +27,7 @@ def router():
         show_keyword_search()
 
     elif action == "search_with_keyword_params":
-        keyword = args.get("keyword", [None])[0]
+        keyword = args.get("keyword", [None])[-1]
         if keyword is not None:
             show_keyword_search(keyword)
 
@@ -40,6 +40,6 @@ def router():
         remove_all_keyword()
 
     elif action == "play":
-        url = args.get("url", [None])[0]
+        url = args.get("url", [None])[-1]
         if url is not None:
             play(url)
