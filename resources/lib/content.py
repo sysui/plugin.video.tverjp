@@ -57,9 +57,7 @@ def add_contents(contents: list[Content]):
                 r"\1/\2\3",
                 item["broadcastDateLabel"].replace("放送分", ""),
             )
-            title = (
-                f'{broadcastDateLabelForTitle} {item["seriesTitle"]}  {item["title"]}'
-            )
+            title = f'{broadcastDateLabelForTitle + " " if broadcastDateLabelForTitle else ""}{item["seriesTitle"]}  {item["title"]}'
             # Year 2038 problem
             endAtStr = (
                 datetime.fromtimestamp(item["endAt"]).strftime("%Y-%m-%d %H:%M:%S")
@@ -101,7 +99,9 @@ def add_contents(contents: list[Content]):
             command_search = f"Container.Update({search_serise_title})"
             listitem.addContextMenuItems([("この番組名で検索", command_search)])
             episode_url = f"https://statics.tver.jp/content/episode/{id}.json"
-            url = "%s?action=%s&url=%s" % (sys.argv[0], "play", quote_plus(episode_url))
+            url = "{}?action={}&url={}".format(
+                sys.argv[0], "play", quote_plus(episode_url)
+            )
             items.append((url, listitem, False))
     xbmcplugin.addDirectoryItems(int(sys.argv[1]), items)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))

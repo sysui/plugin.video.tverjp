@@ -31,8 +31,8 @@ def show_keyword_search(keyword: str = ""):
     if not keyword:
         return
     append_keyword_history(keyword)
-    platform_uid, platform_token = get_token()
-    data = _keyword_search(platform_uid, platform_token, keyword)
+    token = get_token()
+    data = _keyword_search(token["platform_uid"], token["platform_token"], keyword)
     contents = data["result"]["contents"]
     if contents:
         add_contents(contents)
