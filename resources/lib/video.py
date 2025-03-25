@@ -57,7 +57,8 @@ def _get_video(url: str) -> PlayableMedia:
             url = f"https://edge.api.brightcove.com/playback/v1/accounts/{accountID}/videos/{videoID}"
         playback = get_json(url, {"accept": f"application/json;pk={policykey}"})
         subtitle_urls = []
-        if text_tracks := playback["text_tracks"][0]["sources"]:
+        text_tracks = playback["text_tracks"][0]["sources"]
+        if text_tracks:
             subtitle_urls = [text_track["src"] for text_track in text_tracks]
         filtered_video_url_list = [
             source
