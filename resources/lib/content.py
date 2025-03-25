@@ -22,6 +22,7 @@ class EpisodeContent(TypedDict):
     isAvailable: bool
     broadcasterName: str
     productionProviderName: str
+    isEndingSoon: bool
 
 
 class LiveContent(TypedDict):
@@ -44,6 +45,7 @@ class LiveContent(TypedDict):
 class Content(TypedDict):
     type: str
     content: EpisodeContent
+    rank: int
 
 
 def add_contents(contents: list[Content]):
