@@ -23,10 +23,8 @@ def _get_video(url: str) -> PlayableMedia:
         streaks = episode["streaks"]
         video_ref_id = streaks.get("videoRefID")
         project_id = streaks["projectID"]
-        if not video_ref_id.isdigit() and not video_ref_id.startswith("ref:"):
-            video_ref_id = f"ref:{video_ref_id}"
-        streaks_url = f"https://playback.api.streaks.jp/v1/projects/{project_id}/medias/{video_ref_id}?ati={'aa'}"
-        streaks_data = get_json(streaks_url, {"origin": "https://tver.jp/"})
+        streaks_url = f"https://playback.api.streaks.jp/v1/projects/{project_id}/medias/ref:{video_ref_id}"
+        streaks_data = get_json(streaks_url)
         video_url = streaks_data["sources"][0]["src"]
         subtitle_urls = [
             track["src"]
