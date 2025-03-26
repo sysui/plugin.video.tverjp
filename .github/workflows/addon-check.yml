@@ -11,8 +11,7 @@ jobs:
       uses: actions/checkout@v4
     - name: Kodi addon checker validation
       id: kodi-addon-checker
-      uses: xbmc/action-kodi-addon-checker@v1.2
+      uses: xbmc/action-kodi-addon-checker@4aac2f82ad590261c589bad53200f575f06d023a # v1.2
       with:
-        kodi-version: matrix
-        is-pr: false
+        kodi-version: omega
         addon-id: ${{ github.event.repository.name }}
