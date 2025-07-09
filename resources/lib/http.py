@@ -1,8 +1,9 @@
 import requests
+from urllib3.util import SKIP_HEADER
 
 
 def get_json(url: str, *headers_arg: dict[str, str]):
-    headers: dict[str, str] = {"User-Agent": ""}
+    headers: dict[str, str] = {"User-Agent": SKIP_HEADER}
     for header in headers_arg:
         headers |= header
     r = requests.get(url, headers=headers)
