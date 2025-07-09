@@ -7,11 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Kodi addon checker
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Kodi addon checker validation
-      id: kodi-addon-checker
-      uses: xbmc/action-kodi-addon-checker@4aac2f82ad590261c589bad53200f575f06d023a # v1.2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
-        kodi-version: omega
-        addon-id: ${{ github.event.repository.name }}
+        python-version: '3.13'
+    - run: pip install kodi-addon-checker
+    - run: kodi-addon-checker . --branch omega
