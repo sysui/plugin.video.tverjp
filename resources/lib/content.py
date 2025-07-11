@@ -59,7 +59,7 @@ def add_contents(contents: list[Content]):
                 r"\1/\2\3",
                 item["broadcastDateLabel"].replace("放送分", ""),
             )
-            title = f'{broadcastDateLabelForTitle + " " if broadcastDateLabelForTitle else ""}{item["seriesTitle"]}  {item["title"]}'
+            title = f"{broadcastDateLabelForTitle} {item['seriesTitle']}  {item['title']}".strip()
             # Year 2038 problem
             endAtStr = (
                 datetime.fromtimestamp(item["endAt"]).strftime("%Y-%m-%d %H:%M:%S")
@@ -67,16 +67,13 @@ def add_contents(contents: list[Content]):
                 else "期限なし"
             )
 
-            description = "\n".join(
-                [
-                    item["seriesTitle"],
-                    item["title"],
-                    "",
-                    item["broadcastDateLabel"],
-                    "配信終了: " + endAtStr,
-                    "字幕: " + str(item["isSubtitle"]),
-                    item["broadcasterName"],
-                ]
+            description = (
+                f"{item['seriesTitle']}\n"
+                f"{item['title']}\n\n"
+                f"{item['broadcastDateLabel']}\n"
+                f"配信終了: {endAtStr}\n"
+                f"字幕: {'あり' if item['isSubtitle'] else 'なし'}\n"
+                f"{item['broadcasterName']}"
             )
             thumbnail = f"https://statics.tver.jp/images/content/thumbnail/episode/small/{id}.jpg"
             listitem = xbmcgui.ListItem(title)
