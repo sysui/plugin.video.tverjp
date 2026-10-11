@@ -4,6 +4,7 @@ from urllib.parse import parse_qs
 from resources.lib.dashboard import dashboard
 from resources.lib.history import remove_all_keyword, remove_keyword
 from resources.lib.search import show_keyword_history, show_keyword_search
+from resources.lib.server import send_to_server
 from resources.lib.top import show_top
 from resources.lib.video import play
 
@@ -43,3 +44,8 @@ def router():
         url = args.get("url", [None])[-1]
         if url is not None:
             play(url)
+
+    elif action == "send_to_server":
+        url = args.get("url", [None])[-1]
+        if url is not None:
+            send_to_server(url)
