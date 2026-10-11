@@ -2,10 +2,14 @@ import re
 import sys
 from datetime import datetime
 from typing import Any, TypedDict
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlencode
 
+import xbmcaddon
 import xbmcgui
 import xbmcplugin
+
+
+ADDON = xbmcaddon.Addon()
 
 
 class EpisodeContent(TypedDict):
@@ -96,7 +100,22 @@ def add_contents(contents: list[Content]):
                 sys.argv[0], "search_with_keyword_params", item["seriesTitle"]
             )
             command_search = f"Container.Update({search_serise_title})"
-            listitem.addContextMenuItems([("この番組名で検索", command_search)])
+            context_menu_items = [("この番組名で検索", command_search)]
+            if ADDON.getSettingString("destination_url").strip():
+                send_url = "{}?{}".format(
+                    sys.argv[0],
+                    urlencode(
+                        {
+                            "action": "send_to_server",
+                            "url": f"https://tver.jp/episodes/{id}",
+                        }
+                    ),
+                )
+                command_send = f"RunPlugin({send_url})"
+                context_menu_items.append(
+                    ("番組URLをサーバーへ送信", command_send)
+                )
+            listitem.addContextMenuItems(context_menu_items)
             episode_url = f"https://statics.tver.jp/content/episode/{id}.json"
             url = "{}?action={}&url={}".format(
                 sys.argv[0], "play", quote_plus(episode_url)
